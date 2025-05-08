@@ -1,0 +1,435 @@
+{% extends "layout.html" %}
+
+{% block title %} - Customer Profile{% endblock %}
+
+{% block content %}
+<div class="customer-profile-container">
+    <div class="page-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <h1>
+                <i class="fas fa-user-circle me-2"></i>
+                {{ customer.full_name }}
+            </h1>
+            <div class="profile-actions">
+                <button class="btn btn-primary" id="newInteractionBtn">
+                    <i class="fas fa-plus me-1"></i> New Interaction
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card customer-info-card">
+                <div class="card-header">
+                    <h5 class="card-title">Customer Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="customer-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="customer-details">
+                        <div class="detail-item">
+                            <span class="detail-label">
+                                <i class="fas fa-envelope me-2"></i> Email:
+                            </span>
+                            <span class="detail-value">{{ customer.email }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">
+                                <i class="fas fa-phone me-2"></i> Phone:
+                            </span>
+                            <span class="detail-value">{{ customer.phone }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">
+                                <i class="fas fa-calendar me-2"></i> Customer Since:
+                            </span>
+                            <span class="detail-value">{{ customer.created_at.strftime('%Y-%m-%d') }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="card-title">Customer Preferences</h5>
+                </div>
+                <div class="card-body">
+                    <div class="preference-chart-container">
+                        <canvas id="preferencesChart"></canvas>
+                    </div>
+                    <div class="preference-list mt-3">
+                        {% if preferences %}
+                            {% for preference in preferences %}
+                            <div class="preference-item">
+                                <span class="preference-category">{{ preference.category }}</span>
+                                <div class="preference-bar">
+                                    <div class="preference-level" style="width: {{ preference.preference_level * 20 }}%"></div>
+                                </div>
+                                <span class="preference-value">{{ preference.preference_level }}/5</span>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-muted">No preference data available</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="card recommendations-card">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        <i class="fas fa-lightbulb me-2"></i> AI Recommendations
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="ai-recommendation-header">
+                        <div class="ai-avatar">
+                            <i class="fas fa-robot"></i>
+                        </div>
+                        <div class="ai-message">
+                            <p>Based on <strong>{{ customer.full_name }}'s</strong> data and preferences, I recommend the following products and solutions:</p>
+                        </div>
+                    </div>
+                    <div class="recommendations-list">
+                        {% if recommendations %}
+                            {% for rec in recommendations %}
+                            <div class="recommendation-item">
+                                <div class="recommendation-icon">
+                                    <i class="fas fa-box"></i>
+                                </div>
+                                <div class="recommendation-details">
+                                    <h6>{{ rec.name }}</h6>
+                                    <p>{{ rec.description }}</p>
+                                    {% if rec.promotions %}
+                                        {% for promo in rec.promotions %}
+                                        <div class="recommendation-promotion">
+                                            <span class="badge bg-success">{{ promo.name }}: {{ promo.discount_percentage }}% OFF</span>
+                                            <span class="price-display">
+                                                <span class="original-price">${{ rec.price }}</span>
+                                                <span class="discounted-price">${{ promo.discounted_price }}</span>
+                                            </span>
+                                        </div>
+                                        {% endfor %}
+                                    {% else %}
+                                        <span class="price-display">${{ rec.price }}</span>
+                                    {% endif %}
+                                </div>
+                                <div class="recommendation-actions">
+                                    <button class="btn btn-sm btn-primary recommend-btn" data-product-id="{{ rec.product_id }}">
+                                        <i class="fas fa-thumbs-up me-1"></i> Recommend
+                                    </button>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-muted text-center py-3">No recommendations available</p>
+                            <button class="btn btn-outline-primary d-block mx-auto" id="generateRecommendationsBtn">
+                                <i class="fas fa-sync-alt me-1"></i> Generate Recommendations
+                            </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title">Interaction History</h5>
+                    <div class="card-actions">
+                        <button class="btn btn-sm btn-outline-primary" id="refreshInteractionsBtn">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover interaction-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Type</th>
+                                    <th>Notes</th>
+                                    <th>Recommendations</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if interactions %}
+                                    {% for interaction in interactions %}
+                                    <tr>
+                                        <td>{{ interaction.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                        <td>
+                                            <span class="badge {% if interaction.interaction_type == 'call' %}bg-primary{% elif interaction.interaction_type == 'email' %}bg-info{% else %}bg-secondary{% endif %}">
+                                                {{ interaction.interaction_type }}
+                                            </span>
+                                        </td>
+                                        <td>{{ interaction.notes }}</td>
+                                        <td>{{ interaction.recommendations }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="4" class="text-center">No interaction history available</td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="card-title">Purchase History</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover purchase-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Product</th>
+                                    <th>Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if purchases %}
+                                    {% for purchase in purchases %}
+                                    <tr>
+                                        <td>{{ purchase.purchase_date.strftime('%Y-%m-%d') }}</td>
+                                        <td>{{ purchase.product.name }}</td>
+                                        <td>${{ purchase.amount }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="3" class="text-center">No purchase history available</td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- New Interaction Modal -->
+<div class="modal fade" id="newInteractionModal" tabindex="-1" aria-labelledby="newInteractionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="newInteractionModalLabel">
+                    <i class="fas fa-comment-dots me-2"></i> New Interaction with {{ customer.full_name }}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="interactionForm">
+                    <input type="hidden" id="customerId" value="{{ customer.id }}">
+                    <div class="mb-3">
+                        <label for="interactionType" class="form-label">Interaction Type</label>
+                        <select class="form-select" id="interactionType" required>
+                            <option value="">Select type</option>
+                            <option value="call">Phone Call</option>
+                            <option value="email">Email</option>
+                            <option value="chat">Live Chat</option>
+                            <option value="in-person">In Person</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="interactionNotes" class="form-label">Notes</label>
+                        <textarea class="form-control" id="interactionNotes" rows="3" required placeholder="Enter detailed notes about this interaction..."></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="interactionRecommendations" class="form-label">Recommendations Made</label>
+                        <textarea class="form-control" id="interactionRecommendations" rows="3" placeholder="Enter any recommendations you provided..."></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">AI Recommendation Suggestions</label>
+                        <div class="ai-suggestions">
+                            <div class="ai-suggestion-header">
+                                <div class="ai-avatar small">
+                                    <i class="fas fa-robot"></i>
+                                </div>
+                                <p>Based on this customer's profile, consider recommending:</p>
+                            </div>
+                            <div class="ai-suggestion-list">
+                                {% if recommendations %}
+                                    {% for rec in recommendations[:3] %}
+                                    <div class="ai-suggestion-item">
+                                        <button type="button" class="btn btn-sm btn-outline-primary suggestion-btn" data-recommendation="{{ rec.name }} - {{ rec.description }}">
+                                            {{ rec.name }}
+                                        </button>
+                                    </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <p class="text-muted">No recommendation suggestions available</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveInteractionBtn">Save Interaction</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize preference chart
+    const preferencesChart = document.getElementById('preferencesChart');
+    if (preferencesChart) {
+        const prefData = {
+            {% for pref in preferences %}
+                '{{ pref.category }}': {{ pref.preference_level }},
+            {% endfor %}
+        };
+        
+        const labels = Object.keys(prefData);
+        const values = Object.values(prefData);
+        
+        new Chart(preferencesChart, {
+            type: 'radar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Preference Level',
+                    data: values,
+                    backgroundColor: 'rgba(138, 43, 226, 0.2)',
+                    borderColor: 'rgba(138, 43, 226, 1)',
+                    pointBackgroundColor: 'rgba(138, 43, 226, 1)',
+                    pointBorderColor: '#fff',
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: 'rgba(138, 43, 226, 1)'
+                }]
+            },
+            options: {
+                scales: {
+                    r: {
+                        angleLines: {
+                            color: 'rgba(255, 255, 255, 0.2)'
+                        },
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.2)'
+                        },
+                        pointLabels: {
+                            color: 'rgba(255, 255, 255, 0.7)'
+                        },
+                        ticks: {
+                            backdropColor: 'transparent',
+                            color: 'rgba(255, 255, 255, 0.7)'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: 'rgba(255, 255, 255, 0.7)'
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    // New Interaction Modal
+    const newInteractionBtn = document.getElementById('newInteractionBtn');
+    const newInteractionModal = new bootstrap.Modal(document.getElementById('newInteractionModal'));
+    const saveInteractionBtn = document.getElementById('saveInteractionBtn');
+    
+    if (newInteractionBtn) {
+        newInteractionBtn.addEventListener('click', function() {
+            newInteractionModal.show();
+        });
+    }
+    
+    // Add suggested recommendation to textbox
+    const suggestionBtns = document.querySelectorAll('.suggestion-btn');
+    suggestionBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const recommendation = this.getAttribute('data-recommendation');
+            const recommendationsTextarea = document.getElementById('interactionRecommendations');
+            
+            const currentText = recommendationsTextarea.value;
+            if (currentText) {
+                recommendationsTextarea.value = currentText + "\n" + recommendation;
+            } else {
+                recommendationsTextarea.value = recommendation;
+            }
+        });
+    });
+    
+    // Save interaction
+    if (saveInteractionBtn) {
+        saveInteractionBtn.addEventListener('click', function() {
+            const customerId = document.getElementById('customerId').value;
+            const interactionType = document.getElementById('interactionType').value;
+            const notes = document.getElementById('interactionNotes').value;
+            const recommendations = document.getElementById('interactionRecommendations').value;
+            
+            // Validate form
+            if (!interactionType || !notes) {
+                alert('Please fill out all required fields');
+                return;
+            }
+            
+            // In a real application, this would send data to the server
+            // For this demo, we'll simulate a successful save
+            const interactionData = {
+                customer_id: customerId,
+                interaction_type: interactionType,
+                notes: notes,
+                recommendations: recommendations
+            };
+            
+            // Simulate API call
+            console.log('Saving interaction:', interactionData);
+            
+            // Show success message and close modal
+            alert('Interaction saved successfully!');
+            newInteractionModal.hide();
+            
+            // Reload page to show new interaction
+            window.location.reload();
+        });
+    }
+    
+    // Recommend product button
+    const recommendBtns = document.querySelectorAll('.recommend-btn');
+    recommendBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const productId = this.getAttribute('data-product-id');
+            const productName = this.closest('.recommendation-item').querySelector('h6').textContent;
+            
+            // Open new interaction modal with pre-filled data
+            document.getElementById('interactionType').value = 'call';
+            document.getElementById('interactionNotes').value = 'Discussed product recommendations with customer.';
+            document.getElementById('interactionRecommendations').value = `Recommended ${productName} based on customer preferences and AI suggestions.`;
+            
+            newInteractionModal.show();
+        });
+    });
+    
+    // Generate recommendations button
+    const generateRecommendationsBtn = document.getElementById('generateRecommendationsBtn');
+    if (generateRecommendationsBtn) {
+        generateRecommendationsBtn.addEventListener('click', function() {
+            const customerId = document.getElementById('customerId').value;
+            
+            // Reload page to fetch recommendations
+            window.location.reload();
+        });
+    }
+});
+</script>
+{% endblock %}

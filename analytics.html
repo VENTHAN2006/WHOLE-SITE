@@ -1,0 +1,461 @@
+{% extends "layout.html" %}
+
+{% block title %} - Analytics{% endblock %}
+
+{% block head %}
+<!-- Additional CSS for analytics page -->
+<style>
+.analytics-card {
+    transition: transform 0.3s ease;
+}
+.analytics-card:hover {
+    transform: translateY(-5px);
+}
+.chart-container {
+    height: 300px;
+    position: relative;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="analytics-container">
+    <div class="page-header">
+        <h1>Customer Analytics</h1>
+        <p class="lead">Comprehensive data insights to inform your customer service strategy</p>
+    </div>
+
+    <div class="row analytics-summary">
+        <div class="col-md-3">
+            <div class="card analytics-card">
+                <div class="card-body text-center">
+                    <div class="summary-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <h5 class="card-title">Total Customers</h5>
+                    <h2 class="summary-value">{{ analytics.total_customers }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card analytics-card">
+                <div class="card-body text-center">
+                    <div class="summary-icon">
+                        <i class="fas fa-shopping-cart"></i>
+                    </div>
+                    <h5 class="card-title">Products Sold</h5>
+                    <h2 class="summary-value">{{ analytics.total_products_sold }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card analytics-card">
+                <div class="card-body text-center">
+                    <div class="summary-icon">
+                        <i class="fas fa-comment-dots"></i>
+                    </div>
+                    <h5 class="card-title">Total Interactions</h5>
+                    <h2 class="summary-value">{{ analytics.total_interactions }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card analytics-card">
+                <div class="card-body text-center">
+                    <div class="summary-icon">
+                        <i class="fas fa-percentage"></i>
+                    </div>
+                    <h5 class="card-title">Conversion Rate</h5>
+                    <h2 class="summary-value">
+                        {% if analytics.total_interactions > 0 %}
+                            {{ (analytics.total_products_sold / analytics.total_interactions * 100) | round(1) }}%
+                        {% else %}
+                            0%
+                        {% endif %}
+                    </h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card analytics-card">
+                <div class="card-header">
+                    <h5 class="card-title">Product Categories Popularity</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="categoriesChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card analytics-card">
+                <div class="card-header">
+                    <h5 class="card-title">Customer Preferences</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="preferencesChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-md-4">
+            <div class="card analytics-card">
+                <div class="card-header">
+                    <h5 class="card-title">Interaction Types</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="interactionTypesChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-8">
+            <div class="card analytics-card">
+                <div class="card-header">
+                    <h5 class="card-title">Best Selling Products</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="bestSellersChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">Data Analysis Visuals</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card analytics-card mb-4">
+                                <img src="https://pixabay.com/get/g2cde51e00022d3fb7686226ddc083d9f187b7608121012acf5fadce6a3ab60df3561fee11e02fb3d0b8ee3a055c2eace7adb3c0e5253c62f2ed0c45c38726d6e_1280.jpg" class="card-img-top" alt="Customer Data Analytics">
+                                <div class="card-body">
+                                    <h5 class="card-title">Customer Behavior Analysis</h5>
+                                    <p class="card-text">Comprehensive tracking of customer interactions and preferences to inform personalized experiences.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card analytics-card mb-4">
+                                <img src="https://pixabay.com/get/g5f34fe6eb4db83e9856d760ac22f43cb5ce719e83acfe4477dfda12a6499f25b556aa84e7d959ac9dee1ae7b757ff4bf7fed75fa0f9b9decd5c69b2263e0ea33_1280.jpg" class="card-img-top" alt="Customer Data Analytics">
+                                <div class="card-body">
+                                    <h5 class="card-title">Product Performance Metrics</h5>
+                                    <p class="card-text">Detailed analysis of product performance across different customer segments and time periods.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title">Professional Customer Support</h5>
+                    <button class="btn btn-sm btn-outline-primary" id="refreshDataBtn">
+                        <i class="fas fa-sync-alt me-1"></i> Refresh Data
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="card support-card">
+                                <img src="https://pixabay.com/get/gc5807cf6487c2e3e2b77a5830774dac61b5ad7913554c52db33b525b575d5c170b1b7b4add135231b84698a321ec039061644636c4191a6c2fa519311557d9e3_1280.jpg" class="card-img-top" alt="Professional Customer Support">
+                                <div class="card-body">
+                                    <h5 class="card-title">Data-Driven Support</h5>
+                                    <p class="card-text">Using customer analytics to provide targeted, efficient support.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card support-card">
+                                <img src="https://pixabay.com/get/gdbaca4dace55f8393d93e2350dc4d77c88890a4e5252bc5ed7676ed31451bc893a71f5c751f010b6b25a36fd33cfe97be0b6480639563a2057340596788af17b_1280.jpg" class="card-img-top" alt="Professional Customer Support">
+                                <div class="card-body">
+                                    <h5 class="card-title">Personalized Recommendations</h5>
+                                    <p class="card-text">AI-powered product suggestions based on customer history.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card support-card">
+                                <img src="https://pixabay.com/get/g8930b72c692b1dd55b898a1d67084ecf78d00ba0dc3380944b9af8d8e472f8ef8cd4d0f27650f5ffdfa4bf440e43e9724de7100ccad003a0458ae4b34bf232ec_1280.jpg" class="card-img-top" alt="Professional Customer Support">
+                                <div class="card-body">
+                                    <h5 class="card-title">Customer Success</h5>
+                                    <p class="card-text">Providing solutions that proactively meet customer needs.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card support-card">
+                                <img src="https://pixabay.com/get/g9a76e229a0ced3c526886ef5c12d66dec3d5bc84e2c7f47c4343f1e3bef2b6bc6a06c095a125879e2b7387278695aff363f5097e48130a40dfa33953b6a1b39d_1280.jpg" class="card-img-top" alt="Professional Customer Support">
+                                <div class="card-body">
+                                    <h5 class="card-title">Customer Insights</h5>
+                                    <p class="card-text">Gathering actionable intelligence from customer interactions.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/analytics.js') }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Define chart colors
+    const chartColors = {
+        background: [
+            'rgba(138, 43, 226, 0.7)',
+            'rgba(65, 105, 225, 0.7)',
+            'rgba(147, 112, 219, 0.7)',
+            'rgba(72, 61, 139, 0.7)',
+            'rgba(106, 90, 205, 0.7)',
+            'rgba(123, 104, 238, 0.7)'
+        ],
+        border: [
+            'rgba(138, 43, 226, 1)',
+            'rgba(65, 105, 225, 1)',
+            'rgba(147, 112, 219, 1)',
+            'rgba(72, 61, 139, 1)',
+            'rgba(106, 90, 205, 1)',
+            'rgba(123, 104, 238, 1)'
+        ]
+    };
+    
+    // Categories Chart
+    const categoriesChartCtx = document.getElementById('categoriesChart');
+    if (categoriesChartCtx) {
+        // Extract data from analytics
+        const categories = [];
+        const categoryCounts = [];
+        
+        {% for category in analytics.popular_categories %}
+            categories.push('{{ category.category }}');
+            categoryCounts.push({{ category.count }});
+        {% endfor %}
+        
+        new Chart(categoriesChartCtx, {
+            type: 'doughnut',
+            data: {
+                labels: categories,
+                datasets: [{
+                    data: categoryCounts,
+                    backgroundColor: chartColors.background,
+                    borderColor: chartColors.border,
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            color: 'rgba(255, 255, 255, 0.7)'
+                        }
+                    },
+                    title: {
+                        display: true,
+                        text: 'Product Categories by Popularity',
+                        color: 'rgba(255, 255, 255, 0.9)'
+                    }
+                }
+            }
+        });
+    }
+    
+    // Preferences Chart
+    const preferencesChartCtx = document.getElementById('preferencesChart');
+    if (preferencesChartCtx) {
+        // Extract data from analytics
+        const prefCategories = [];
+        const prefAverages = [];
+        
+        {% for pref in analytics.preference_data %}
+            prefCategories.push('{{ pref.category }}');
+            prefAverages.push({{ pref.average }});
+        {% endfor %}
+        
+        new Chart(preferencesChartCtx, {
+            type: 'radar',
+            data: {
+                labels: prefCategories,
+                datasets: [{
+                    label: 'Average Preference Level',
+                    data: prefAverages,
+                    backgroundColor: 'rgba(138, 43, 226, 0.2)',
+                    borderColor: 'rgba(138, 43, 226, 1)',
+                    pointBackgroundColor: 'rgba(138, 43, 226, 1)',
+                    pointBorderColor: '#fff',
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: 'rgba(138, 43, 226, 1)'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        angleLines: {
+                            color: 'rgba(255, 255, 255, 0.2)'
+                        },
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.2)'
+                        },
+                        pointLabels: {
+                            color: 'rgba(255, 255, 255, 0.7)'
+                        },
+                        ticks: {
+                            backdropColor: 'transparent',
+                            color: 'rgba(255, 255, 255, 0.7)'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: 'rgba(255, 255, 255, 0.7)'
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    // Interaction Types Chart
+    const interactionTypesChartCtx = document.getElementById('interactionTypesChart');
+    if (interactionTypesChartCtx) {
+        // Extract data from analytics
+        const interactionTypes = [];
+        const interactionCounts = [];
+        
+        {% for interaction in analytics.interaction_types %}
+            interactionTypes.push('{{ interaction.type }}');
+            interactionCounts.push({{ interaction.count }});
+        {% endfor %}
+        
+        new Chart(interactionTypesChartCtx, {
+            type: 'pie',
+            data: {
+                labels: interactionTypes,
+                datasets: [{
+                    data: interactionCounts,
+                    backgroundColor: chartColors.background,
+                    borderColor: chartColors.border,
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: 'rgba(255, 255, 255, 0.7)'
+                        }
+                    },
+                    title: {
+                        display: true,
+                        text: 'Interaction Types Distribution',
+                        color: 'rgba(255, 255, 255, 0.9)'
+                    }
+                }
+            }
+        });
+    }
+    
+    // Best Sellers Chart
+    const bestSellersChartCtx = document.getElementById('bestSellersChart');
+    if (bestSellersChartCtx) {
+        // Extract data from analytics
+        const productNames = [];
+        const productCounts = [];
+        
+        {% for product in analytics.best_sellers %}
+            productNames.push('{{ product.name }}');
+            productCounts.push({{ product.count }});
+        {% endfor %}
+        
+        new Chart(bestSellersChartCtx, {
+            type: 'bar',
+            data: {
+                labels: productNames,
+                datasets: [{
+                    label: 'Number of Sales',
+                    data: productCounts,
+                    backgroundColor: chartColors.background,
+                    borderColor: chartColors.border,
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            color: 'rgba(255, 255, 255, 0.7)'
+                        },
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.1)'
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            color: 'rgba(255, 255, 255, 0.7)'
+                        },
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.1)'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: 'rgba(255, 255, 255, 0.7)'
+                        }
+                    },
+                    title: {
+                        display: true,
+                        text: 'Best Selling Products',
+                        color: 'rgba(255, 255, 255, 0.9)'
+                    }
+                }
+            }
+        });
+    }
+    
+    // Refresh data button
+    const refreshDataBtn = document.getElementById('refreshDataBtn');
+    if (refreshDataBtn) {
+        refreshDataBtn.addEventListener('click', function() {
+            location.reload();
+        });
+    }
+});
+</script>
+{% endblock %}
